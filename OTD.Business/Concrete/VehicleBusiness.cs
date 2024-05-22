@@ -2,22 +2,22 @@
 using OTD.Core.Entities;
 using OTD.Core.Models;
 using OTD.Repository.Abstract;
+using OTD.Business.Abstract;
+using OTD.Business.Helper;
 
 namespace OTD.Business.Concrete
 {
-    public class VehicleBusiness
+    public class VehicleBusiness : BaseBusiness
     {
-        private readonly IVehicleRepository _vehicleRepository;
+        private readonly IVehicleRepository _repository;
 
         public VehicleBusiness(IVehicleRepository vehicleRepository)
         {
-            _vehicleRepository = vehicleRepository;
+            _repository = vehicleRepository;
         }
 
         public ResponseViewModel Add(VehicleDto dto)
         {
-            var response = new ResponseViewModel();
-
             var vehicle = new Vehicle()
             {
                 Manufacturer = dto.Manufacturer,
@@ -27,105 +27,73 @@ namespace OTD.Business.Concrete
                 Horsepower = dto.Horsepower
             };
 
-            _vehicleRepository.Add(vehicle);
-            var success = _vehicleRepository.SaveChanges();
+            _repository.Add(vehicle);
+            var success = _repository.SaveChanges();
+            if(success == false)
+                return GenerateResponse<ResponseViewModel>(success, ResponseCode.CreatedFailure, null);
 
-            response.Success = success;
-            response.Data = vehicle;
-            response.Message = "Done";
-
-            return response;
+            return GenerateResponse(success, ResponseCode.CreatedSuccess, dto);
         }
 
         public ResponseViewModel Update(VehicleDto dto)
         {
-            var response = new ResponseViewModel();
-
-            var vehicle = _vehicleRepository.Get(x => x.VehicleId == dto.VehicleId && x.DeleteFlag == false);
+            var vehicle = _repository.Get(x => x.VehicleId == dto.VehicleId && x.DeleteFlag == false);
 
             if (vehicle == null)
-            {
-                response.Message = "Cannot access the vehicle.";
-                response.Success = false;
-            }
+                return GenerateResponse<ResponseViewModel>(false, ResponseCode.NotFound, null);
 
             vehicle.Manufacturer = dto.Manufacturer;
             vehicle.Model = dto.Model;
             vehicle.Year = dto.Year;
             vehicle.Color = dto.Color;
             vehicle.Horsepower = dto.Horsepower;
+            vehicle.ModifiedOn = DateTime.Now;
 
-            _vehicleRepository.Update(vehicle);
-            var success = _vehicleRepository.SaveChanges();
+            _repository.Update(vehicle);
+            var success = _repository.SaveChanges();
+            if (success == false)
+                return GenerateResponse<ResponseViewModel>(success, ResponseCode.CreatedFailure, null);
 
-            response.Success = success;
-            response.Message = "Vehicle has been changed";
-            response.Data = vehicle;
-
-            return response;
+            return GenerateResponse(success, ResponseCode.UpdatedSuccess, dto);
         }
 
         public ResponseViewModel Delete(VehicleDto dto)
         {
-            var response = new ResponseViewModel();
-
-            var vehicle = _vehicleRepository.Get(x => x.VehicleId == dto.VehicleId && x.DeleteFlag == false);
+            var vehicle = _repository.Get(x => x.VehicleId == dto.VehicleId && x.DeleteFlag == false);
 
             if (vehicle == null)
-            {
-                response.Message = "Cannot access the vehicle.";
-                response.Success = false;
-            }
+                return GenerateResponse(false, ResponseCode.NotFound, dto);
 
             vehicle.DeleteFlag = true;
-            _vehicleRepository.Update(vehicle);
-            var success = _vehicleRepository.SaveChanges();
 
-            response.Success = success;
-            response.Message = "Vehicle has been deleted.";
-            response.Data = vehicle;
+            _repository.Update(vehicle);
+            var success = _repository.SaveChanges();
+            if (success == false)
+                return GenerateResponse<ResponseViewModel>(success, ResponseCode.DeletedFailure, null);
 
-            return response;
+            return GenerateResponse(success, ResponseCode.DeletedSuccess, dto);
         }
 
         public ResponseViewModel Get(Guid vehicleId)
         {
-            var response = new ResponseViewModel();
-
-            var vehicle = _vehicleRepository.Get(x => x.VehicleId == vehicleId && x.DeleteFlag == false);
+            var vehicle = _repository.Get(x => x.VehicleId == vehicleId && x.DeleteFlag == false);
 
             if (vehicle == null)
-            {
-                response.Message = "Cannot access the vehicle.";
-                response.Success = false;
+                return GenerateResponse<ResponseViewModel>(false, ResponseCode.NotFound, null);
 
-                return response;
-            }
-            response.Message = "Vehicle has been summoned";
-            response.Data = vehicle;
-
-            return response;
+            return GenerateResponse(true, ResponseCode.Success, vehicle);
         }
 
         public ResponseViewModel List()
         {
             var response = new ResponseViewModel();
 
-            var vehicles = _vehicleRepository.GetList(x => x.DeleteFlag == false);
+            var vehicles = _repository.GetList(x => x.DeleteFlag == false);
 
             if (vehicles == null)
-            {
-                response.Message = "Cannot access the vehicle.";
-                response.Success = false;
+                return GenerateResponse<ResponseViewModel>(false, ResponseCode.NotFound, null);
 
-                return response;
-            }
-
-            response.Message = "Vehicle has been summoned";
-            response.Data = vehicles;
-
-            return response;
+            return GenerateResponse(true, ResponseCode.Success, vehicles);
         }
-
     }
 }
