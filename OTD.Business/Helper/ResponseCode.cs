@@ -2,7 +2,7 @@
 
 public class ResponseCode
 {
-    public static ResponseCode Success = new ResponseCode("0", "Entity not found");
+    public static ResponseCode Success = new ResponseCode("0", "Success");
     public static ResponseCode NotFound = new ResponseCode("1", "Entity not found");
     public static ResponseCode CreatedSuccess = new ResponseCode("2", "Created success");
     public static ResponseCode CreatedFailure = new ResponseCode("3", "Created failure");
